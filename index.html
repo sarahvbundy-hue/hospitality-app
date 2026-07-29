@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: oklch(0.975 0.008 90);
@@ -92,6 +93,20 @@
 
   .empty { border: 1px dashed var(--line); border-radius: 5px; padding: 60px 30px; text-align: center; color: var(--ink-mute); }
   .empty h3 { font-weight: 300; font-size: 28px; color: var(--green-deep); margin: 0 0 8px; }
+
+  /* Auth + account */
+  .acct { display: flex; align-items: center; gap: 10px; }
+  .acct-email { font-size: 12px; color: oklch(0.85 0.02 90); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .auth-wrap { max-width: 440px; margin: 40px auto 0; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+  .auth-title { margin: 6px 0 0; font-weight: 300; font-size: 46px; line-height: 1; color: var(--green-deep); }
+  .auth-form { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; text-align: left; }
+  .auth-form input { height: 48px; border: 1px solid var(--line); border-radius: 4px; padding: 0 14px; font-size: 16px; color: var(--ink); background: var(--card); }
+  .auth-form input:focus { border-color: var(--gold); outline: none; }
+  .auth-form .btn { height: 48px; justify-content: center; font-size: 13px; }
+  .auth-actions { display: flex; flex-direction: column; gap: 10px; }
+  .auth-note { font-size: 14px; color: var(--ink-soft); margin: 0 0 4px; }
+  .auth-msg { margin-top: 14px; font-size: 14px; color: var(--gold-deep); font-family: 'Newsreader', serif; font-style: italic; }
+  .legacy-banner { border: 1px solid oklch(0.72 0.1 82 / 0.5); background: oklch(0.72 0.1 82 / 0.08); border-radius: 4px; padding: 12px 16px; margin-bottom: 22px; font-size: 14px; color: var(--ink-soft); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .add-card {
     border: 1px dashed oklch(0.55 0.09 82 / 0.5); background: transparent; color: var(--gold-deep);
     display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 150px;
@@ -279,6 +294,7 @@
         <button class="tab" data-act="go-guide">Guide</button>
       </nav>
       <div class="spacer"></div>
+      <div id="acct" class="acct"></div>
       <button class="btn btn-gold" data-act="new-event">+ New event</button>
     </div>
   </header>
@@ -288,7 +304,7 @@
   <footer>
     <div class="foot-in">
       <span>Corporate Hospitality Playbook · Event Workspace</span>
-      <span>Local prototype · saved in this browser</span>
+      <span>Signed-in workspace · live collaboration</span>
     </div>
   </footer>
 
@@ -397,22 +413,75 @@ PLAYBOOK.push({
 function itemCount(sec) { return sec.groups.reduce((n, g) => n + g.items.length, 0); }
 const TOTAL_ITEMS = PLAYBOOK.reduce((n, s) => n + itemCount(s), 0);
 
-/* ---------- State + storage ---------- */
-const STORE = 'hospitality-events-v1';
-let state = { events: [], view: 'home', currentId: null, modal: false, guideQuery: '' };
+/* ---------- Supabase client + state ---------- */
+const SUPABASE_URL = 'https://ckdevuabpxjrikkcujik.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_jZIIYG7N4eIlQfrX8-fXaw_IbObMaER';
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const LEGACY_STORE = 'hospitality-events-v1'; // pre-sign-in local data (for one-time import)
+const CLIENT_ID = Math.random().toString(36).slice(2);
 
-function load() {
-  try {
-    const raw = localStorage.getItem(STORE);
-    if (raw) { const d = JSON.parse(raw); if (d && Array.isArray(d.events)) state.events = d.events; }
-  } catch (e) { console.warn('load failed', e); }
-}
-function save() {
-  try { localStorage.setItem(STORE, JSON.stringify({ events: state.events })); }
-  catch (e) { console.warn('save failed', e); }
-}
+let state = {
+  booting: true, session: null, user: null,
+  events: [], members: {},               // members[eventId] = [{email, role}]
+  view: 'home', currentId: null, modal: false, guideQuery: '',
+  authStage: 'email', authEmail: '', authMsg: ''
+};
+
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function currentEvent() { return state.events.find(e => e.id === state.currentId) || null; }
+function isOwner(ev) { return !!(ev && state.user && ev.owner === state.user.id); }
+
+/* Persist the current event to Supabase (debounced per event). */
+const _saveTimers = {};
+function save() { const ev = currentEvent(); if (ev) scheduleSave(ev); }
+function scheduleSave(ev) {
+  clearTimeout(_saveTimers[ev.id]);
+  _saveTimers[ev.id] = setTimeout(() => persistEvent(ev), 500);
+}
+async function persistEvent(ev) {
+  if (!sb) return;
+  const data = Object.assign({}, ev);
+  delete data.owner; delete data.open;   // owner is a column; open is local-only UI state
+  data._client = CLIENT_ID;              // tag origin so realtime can ignore our own echo
+  try {
+    const { error } = await sb.from('events')
+      .update({ data, client: ev.client || '', name: ev.name || '', updated_at: new Date().toISOString() })
+      .eq('id', ev.id);
+    if (error) console.warn('save failed:', error.message);
+  } catch (e) { console.warn('save error', e); }
+}
+
+function rowToEvent(row) {
+  const ev = Object.assign(
+    { checks: {}, notes: {}, open: {}, amounts: {}, answers: {}, customItems: {}, vendors: [], attachments: {} },
+    row.data || {}
+  );
+  ev.id = row.id;
+  ev.owner = row.owner;
+  ev.client = row.client || ev.client || '';
+  ev.name = row.name || ev.name || '';
+  delete ev._client;
+  ev.open = {}; // sections start collapsed on each load
+  return ev;
+}
+async function loadEvents() {
+  if (!sb) return;
+  const { data: rows, error } = await sb.from('events').select('*').order('updated_at', { ascending: false });
+  if (error) { console.warn('loadEvents:', error.message); return; }
+  state.events = (rows || []).map(rowToEvent);
+  await loadMembers();
+}
+async function loadMembers() {
+  if (!sb) return;
+  state.members = {};
+  const { data: rows, error } = await sb.from('event_members').select('event_id,email,role');
+  if (error) { console.warn('loadMembers:', error.message); return; }
+  (rows || []).forEach(m => { (state.members[m.event_id] = state.members[m.event_id] || []).push({ email: m.email, role: m.role || 'Collaborator' }); });
+}
+function hasLegacy() {
+  try { const d = JSON.parse(localStorage.getItem(LEGACY_STORE) || 'null'); return d && Array.isArray(d.events) ? d.events.length : 0; }
+  catch (e) { return 0; }
+}
 
 function customItemsFor(ev, sid) { return (ev.customItems && ev.customItems[sid]) || []; }
 
@@ -460,6 +529,9 @@ function fmtDate(d) {
 const app = document.getElementById('app');
 
 function render() {
+  renderAccount();
+  if (state.booting) { app.innerHTML = '<div class="empty"><h3>Loading…</h3></div>'; return; }
+  if (!state.session) { renderAuth(); return; }
   document.querySelectorAll('.tab').forEach(t => {
     const act = t.dataset.act;
     t.classList.toggle('active', (act === 'go-home' && (state.view === 'home' || state.view === 'event')) || (act === 'go-guide' && state.view === 'guide'));
@@ -486,7 +558,7 @@ function renderHome() {
   } else {
     body = `<div class="grid">` + evs.map(ev => {
       const p = eventProgress(ev);
-      const collab = (ev.collaborators || []).length;
+      const collab = (state.members[ev.id] || []).length;
       return `<button class="ev-card" data-act="open-event" data-id="${ev.id}">
         <div>
           <div class="client">${esc(ev.client || 'Client')}</div>
@@ -502,6 +574,7 @@ function renderHome() {
     <span class="eyebrow">Workspace</span>
     <div class="page-head"><h1>Your Events</h1></div>
     <p class="lede">Each event runs the full ${PLAYBOOK.length}-part playbook as its own checklist — with notes and collaborators.</p>
+    ${legacyBanner()}
     ${body}`;
 }
 
@@ -596,25 +669,25 @@ function renderEvent() {
 }
 
 function collabPanel(ev) {
-  const list = (ev.collaborators || []).map(c => `
+  const owner = isOwner(ev);
+  const members = state.members[ev.id] || [];
+  const list = members.map(c => `
     <div class="collab-row">
-      <div class="avatar">${esc(initials(c.name))}</div>
-      <div class="who"><div class="nm">${esc(c.name)}</div><div class="em">${esc(c.email || 'no email')}</div></div>
-      <span class="role">${esc(c.role)}</span>
-      <button class="rm" title="Remove" data-act="remove-collab" data-id="${c.id}">×</button>
-    </div>`).join('') || `<div class="note-hint">No collaborators yet. Add teammates who are helping run this event.</div>`;
+      <div class="avatar">${esc((c.email[0] || '?').toUpperCase())}</div>
+      <div class="who"><div class="nm">${esc(c.email)}</div><div class="em">${esc(c.role || 'Collaborator')}</div></div>
+      <button class="rm" title="Remove" data-act="remove-collab" data-id="${esc(c.email)}">×</button>
+    </div>`).join('') || `<div class="note-hint">No collaborators yet. Invite a teammate by email to share this event.</div>`;
 
   return `<div class="collab" id="collab">
     <h3>Collaborators</h3>
-    <p class="desc">People working this event with you.</p>
-    <div class="pill-note">Prototype — collaborators are saved locally in this browser. Real email invites &amp; live sharing come with the multi-user version.</div>
+    <p class="desc">Invite teammates by email. They sign in with that email and this event appears in their workspace, with live updates.</p>
     <div class="collab-list">${list}</div>
     <form class="collab-form" data-act="add-collab">
-      <input class="nm" name="cName" placeholder="Name" required>
-      <input class="em" name="cEmail" type="email" placeholder="email@company.com">
+      <input class="em" name="cEmail" type="email" placeholder="teammate@company.com" required>
       <select name="cRole">${ROLES.map(r => `<option>${r}</option>`).join('')}</select>
       <button class="btn btn-line btn-sm" type="submit">Invite</button>
     </form>
+    ${owner ? '' : `<div class="pill-note">You were invited to this event. Your changes are shared with everyone on it.</div>`}
   </div>`;
 }
 
@@ -808,14 +881,18 @@ function openModal() {
 function closeModal() { state.modal = false; const m = document.getElementById('modalBg'); if (m) m.remove(); }
 
 /* ---------- Actions ---------- */
-function createEvent(form) {
+async function createEvent(form) {
+  if (!sb || !state.user) return;
   const g = n => (form.elements[n] ? form.elements[n].value.trim() : '');
   const name = g('mName'), client = g('mClient');
   if (!name || !client) return;
-  const ev = { id: uid(), client, name, date: g('mDate'), venue: g('mVenue'), createdAt: Date.now(), checks: {}, notes: {}, open: {}, collaborators: [] };
-  state.events.unshift(ev);
-  save();
+  const ev = { client, name, date: g('mDate'), venue: g('mVenue'), createdAt: Date.now(),
+    checks: {}, notes: {}, open: {}, amounts: {}, answers: {}, customItems: {}, vendors: [], attachments: {} };
+  const data = Object.assign({}, ev); delete data.open; data._client = CLIENT_ID;
   closeModal();
+  const { data: row, error } = await sb.from('events').insert({ owner: state.user.id, client, name, data }).select().single();
+  if (error) { alert('Could not create event: ' + error.message); return; }
+  state.events.unshift(rowToEvent(row));
   state.view = 'home';           // land on the list so the new card is visible + clickable
   state.currentId = null;
   window.scrollTo(0, 0);
@@ -835,7 +912,6 @@ function toggleSection(id) {
   const ev = currentEvent(); if (!ev) return;
   ev.open = ev.open || {};
   ev.open[id] = !ev.open[id];
-  save();
   const panel = document.getElementById(id);
   if (panel) panel.classList.toggle('open', ev.open[id]);
   const mk = panel && panel.querySelector('.prog .mk');
@@ -847,20 +923,24 @@ function saveNote(id, val) {
   ev.notes[id] = val;
   save(); // no re-render: keep textarea focus
 }
-function addCollab(form) {
-  const ev = currentEvent(); if (!ev) return;
-  const name = (form.elements['cName'].value || '').trim();
-  if (!name) return;
-  ev.collaborators = ev.collaborators || [];
-  ev.collaborators.push({ id: uid(), name, email: (form.elements['cEmail'].value || '').trim(), role: form.elements['cRole'].value });
-  save();
+async function addCollab(form) {
+  const ev = currentEvent(); if (!ev || !sb) return;
+  const email = (form.elements['cEmail'].value || '').trim().toLowerCase();
+  const role = form.elements['cRole'].value;
+  if (!email) return;
+  const existing = state.members[ev.id] || [];
+  if (existing.some(m => m.email === email)) { alert(email + ' is already a collaborator.'); return; }
+  const { error } = await sb.from('event_members').insert({ event_id: ev.id, email, role, added_by: state.user.id });
+  if (error) { alert('Could not add collaborator: ' + error.message); return; }
+  (state.members[ev.id] = existing).push({ email, role });
   renderEvent();
   const c = document.getElementById('collab'); if (c) c.scrollIntoView({ block: 'center' });
 }
-function removeCollab(id) {
-  const ev = currentEvent(); if (!ev) return;
-  ev.collaborators = (ev.collaborators || []).filter(c => c.id !== id);
-  save();
+async function removeCollab(email) {
+  const ev = currentEvent(); if (!ev || !sb) return;
+  const { error } = await sb.from('event_members').delete().eq('event_id', ev.id).eq('email', email);
+  if (error) { alert('Could not remove collaborator: ' + error.message); return; }
+  state.members[ev.id] = (state.members[ev.id] || []).filter(m => m.email !== email);
   renderEvent();
 }
 function saveAnswer(key, val) {
@@ -985,6 +1065,9 @@ document.addEventListener('click', e => {
   else if (act === 'remove-vendor') { removeVendor(t.dataset.id); }
   else if (act === 'open-file') { openFile(t.dataset.id); }
   else if (act === 'remove-file') { removeFile(t.dataset.sec, t.dataset.id); }
+  else if (act === 'sign-out') { signOut(); }
+  else if (act === 'auth-back') { authBack(); }
+  else if (act === 'migrate') { migrateLocal(); }
 });
 document.addEventListener('submit', e => {
   const form = e.target.closest('form[data-act]');
@@ -992,6 +1075,8 @@ document.addEventListener('submit', e => {
   e.preventDefault();
   if (form.dataset.act === 'create-event') createEvent(form);
   else if (form.dataset.act === 'add-collab') addCollab(form);
+  else if (form.dataset.act === 'auth-email') sendCode(form.elements['email'].value);
+  else if (form.dataset.act === 'auth-code') verifyCode(form.elements['code'].value);
   else if (form.dataset.act === 'add-item') { addCustomItem(form.dataset.sec, (form.elements['itemText'].value || '').trim()); }
   else if (form.dataset.act === 'add-vendor') { addVendor((form.elements['vendorName'].value || '').trim()); }
 });
@@ -1024,8 +1109,134 @@ document.addEventListener('input', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.modal) closeModal(); });
 document.addEventListener('click', e => { if (e.target.id === 'modalBg') closeModal(); });
 
-load();
-render();
+/* ---------- Auth + account UI ---------- */
+function renderAccount() {
+  const acct = document.getElementById('acct');
+  const tabs = document.querySelector('nav.tabs');
+  const newBtn = document.querySelector('[data-act="new-event"]');
+  const signedIn = !!state.session;
+  if (tabs) tabs.style.visibility = signedIn ? 'visible' : 'hidden';
+  if (newBtn) newBtn.style.display = signedIn ? '' : 'none';
+  if (acct) acct.innerHTML = signedIn
+    ? `<span class="acct-email">${esc(state.user.email)}</span><button class="tab" data-act="sign-out">Sign out</button>`
+    : '';
+}
+function renderAuth() {
+  const stage = state.authStage;
+  app.innerHTML = `
+    <div class="auth-wrap">
+      <span class="eyebrow">Event Workspace</span>
+      <h1 class="auth-title">Sign in</h1>
+      <p class="lede">Use your email to access and share your events — no password needed.</p>
+      ${stage === 'email' ? `
+        <form class="auth-form" data-act="auth-email">
+          <input name="email" type="email" placeholder="you@company.com" value="${esc(state.authEmail)}" autocomplete="email" required>
+          <button class="btn btn-gold" type="submit">Send me a code</button>
+        </form>` : `
+        <form class="auth-form" data-act="auth-code">
+          <p class="auth-note">Enter the 6-digit code we emailed to <b>${esc(state.authEmail)}</b>.</p>
+          <input name="code" inputmode="numeric" placeholder="123456" autocomplete="one-time-code" required>
+          <div class="auth-actions">
+            <button class="btn btn-gold" type="submit">Verify &amp; sign in</button>
+            <button class="btn btn-line" type="button" data-act="auth-back">Use a different email</button>
+          </div>
+        </form>`}
+      ${state.authMsg ? `<div class="auth-msg">${esc(state.authMsg)}</div>` : ''}
+    </div>`;
+  const f = app.querySelector('input'); if (f) f.focus();
+}
+async function sendCode(email) {
+  email = (email || '').trim();
+  if (!email || !sb) return;
+  state.authEmail = email; state.authMsg = 'Sending code…'; renderAuth();
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  if (error) { state.authMsg = error.message; renderAuth(); return; }
+  state.authStage = 'code'; state.authMsg = ''; renderAuth();
+}
+async function verifyCode(code) {
+  code = (code || '').trim();
+  if (!code || !sb) return;
+  state.authMsg = 'Verifying…'; renderAuth();
+  const { error } = await sb.auth.verifyOtp({ email: state.authEmail, token: code, type: 'email' });
+  if (error) { state.authMsg = error.message; renderAuth(); }
+  // success flows through onAuthStateChange
+}
+function authBack() { state.authStage = 'email'; state.authMsg = ''; renderAuth(); }
+async function signOut() { if (sb) await sb.auth.signOut(); }
+
+/* ---------- Import pre-sign-in local events ---------- */
+function legacyBanner() {
+  const n = hasLegacy();
+  if (!n) return '';
+  return `<div class="legacy-banner">You have ${n} event${n === 1 ? '' : 's'} saved in this browser from before sign-in. <button class="btn btn-line btn-sm" data-act="migrate">Import to my account</button></div>`;
+}
+async function migrateLocal() {
+  if (!sb || !state.user) return;
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem(LEGACY_STORE) || 'null'); } catch (e) {}
+  const list = old && Array.isArray(old.events) ? old.events : [];
+  if (!list.length) { alert('No local events found to import.'); return; }
+  if (!confirm('Import ' + list.length + ' event' + (list.length === 1 ? '' : 's') + ' into your account?')) return;
+  for (const ev of list) {
+    const data = Object.assign({}, ev);
+    delete data.owner; delete data.id; delete data.open;
+    data._client = CLIENT_ID;
+    const { error } = await sb.from('events').insert({ owner: state.user.id, client: ev.client || '', name: ev.name || '', data });
+    if (error) console.warn('migrate insert failed:', error.message);
+  }
+  localStorage.removeItem(LEGACY_STORE);
+  await loadEvents();
+  render();
+}
+
+/* ---------- Realtime sync ---------- */
+let _rt = null;
+function setupRealtime() {
+  if (_rt || !sb) return;
+  _rt = sb.channel('workspace-sync')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, onRemoteEvent)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'event_members' }, scheduleReload)
+    .subscribe();
+}
+function teardownRealtime() { if (_rt && sb) { sb.removeChannel(_rt); _rt = null; } }
+function onRemoteEvent(payload) {
+  if (payload.new && payload.new.data && payload.new.data._client === CLIENT_ID) return; // ignore our own echo
+  scheduleReload();
+}
+let _reloadTimer = null;
+function scheduleReload() {
+  clearTimeout(_reloadTimer);
+  _reloadTimer = setTimeout(async () => {
+    if (!state.session) return;
+    await loadEvents();
+    const a = document.activeElement;
+    const typing = a && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'checkbox'));
+    if (!typing) render(); // don't clobber a field being typed into
+  }, 300);
+}
+
+/* ---------- Boot ---------- */
+async function applySession(session) {
+  state.session = session || null;
+  state.user = session ? session.user : null;
+  state.booting = false;
+  if (state.session) {
+    state.authStage = 'email'; state.authMsg = '';
+    await loadEvents();
+    setupRealtime();
+  } else {
+    teardownRealtime();
+    state.events = []; state.members = {}; state.currentId = null; state.view = 'home';
+  }
+  render();
+}
+if (!sb) {
+  state.booting = false;
+  app.innerHTML = '<div class="empty"><h3>Offline</h3><p>Could not load the Supabase library. Check your connection and reload.</p></div>';
+} else {
+  render(); // initial loading screen
+  sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => applySession(session), 0); });
+}
 </script>
 </body>
 </html>
