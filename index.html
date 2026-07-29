@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hospitality Playbook — Event Workspace</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2d4a41">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Playbook">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
@@ -281,7 +288,31 @@
     .hero-stat { text-align: left; }
     .sec-body { padding-left: 22px; }
     .g-sec .groups { margin-left: 0; }
-    nav.tabs { display: none; }
+  }
+  @media (max-width: 560px) {
+    .head-in { padding: 0 14px; gap: 8px; }
+    .brand .t { display: none; }
+    .tab { padding: 6px 8px; font-size: 12px; }
+    .btn-txt { display: none; }               /* New-event button collapses to "+" */
+    .acct-email { display: none; }            /* keep just the Sign out control */
+    .acct { gap: 4px; }
+    main { padding: 26px 15px 72px; }
+    .page-head h1, .auth-title { font-size: 34px; }
+    .lede { font-size: 17px; }
+    .ev-hero h1 { font-size: 32px; }
+    .hero-stat .big { font-size: 40px; }
+    .ev-card h3 { font-size: 23px; }
+    .sec-head { grid-template-columns: 34px 1fr auto; gap: 10px; padding: 16px 14px; }
+    .sec-head .num { font-size: 30px; }
+    .sec-head .title { font-size: 22px; }
+    .sec-head .lede { font-size: 15px; }
+    .sec-body { padding: 0 14px 20px; }
+    .status-lbl { flex-wrap: wrap; }
+    .status-lbl .s-text { flex-basis: 55%; }
+    .amt-input { width: 82px; }
+    .collab, .addbox, .qa, .group { padding-left: 14px; padding-right: 14px; }
+    .modal { padding: 24px 20px 22px; }
+    .auth-wrap { margin-top: 24px; }
   }
 </style>
 </head>
@@ -295,7 +326,7 @@
       </nav>
       <div class="spacer"></div>
       <div id="acct" class="acct"></div>
-      <button class="btn btn-gold" data-act="new-event">+ New event</button>
+      <button class="btn btn-gold" data-act="new-event"><span aria-hidden="true">+</span><span class="btn-txt">&nbsp;New event</span></button>
     </div>
   </header>
 
@@ -1236,6 +1267,14 @@ if (!sb) {
 } else {
   render(); // initial loading screen
   sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => applySession(session), 0); });
+}
+
+/* Register the service worker (only over http/https — no-ops on file://) so the
+   app is installable to a phone home screen and the shell can open offline. */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW register failed:', err));
+  });
 }
 </script>
 </body>
