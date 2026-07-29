@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospitality Playbook — Event Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: oklch(0.975 0.008 90);
+    --bg-alt: oklch(0.955 0.012 92);
+    --card: oklch(0.985 0.006 92);
+    --ink: oklch(0.28 0.03 160);
+    --ink-soft: oklch(0.42 0.03 160);
+    --ink-mute: oklch(0.55 0.03 160);
+    --green: oklch(0.33 0.045 162);
+    --green-deep: oklch(0.3 0.035 162);
+    --gold: oklch(0.72 0.1 82);
+    --gold-deep: oklch(0.55 0.09 82);
+    --line: oklch(0.33 0.045 162 / 0.18);
+    --line-soft: oklch(0.33 0.045 162 / 0.12);
+    --ok: oklch(0.55 0.11 150);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  h1, h2, h3, .serif { font-family: 'Newsreader', Georgia, serif; }
+  button { font-family: 'DM Sans', sans-serif; cursor: pointer; }
+  input, textarea, select { font-family: 'DM Sans', sans-serif; }
+  *:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  input[type="checkbox"] { accent-color: var(--green); }
+  ::selection { background: oklch(0.72 0.1 82 / 0.28); }
+  mark { background: oklch(0.82 0.12 82 / 0.55); color: inherit; border-radius: 2px; padding: 0 1px; }
+  .eyebrow { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-deep); }
+
+  /* Header */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--green); color: oklch(0.96 0.01 90);
+  }
+  .head-in { max-width: 1160px; margin: 0 auto; padding: 0 28px; height: 58px;
+    display: flex; align-items: center; gap: 20px; }
+  .brand { display: flex; align-items: center; gap: 9px; }
+  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+  .brand .t { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; }
+  nav.tabs { display: flex; gap: 4px; }
+  .tab { background: transparent; border: none; color: oklch(0.85 0.02 90); font-size: 13px; padding: 6px 12px; border-radius: 3px; letter-spacing: 0.03em; }
+  .tab:hover { color: oklch(0.96 0.01 90); background: oklch(0.96 0.01 90 / 0.08); }
+  .tab.active { color: var(--green-deep); background: var(--gold); font-weight: 600; }
+  .spacer { flex: 1; }
+  .btn {
+    height: 34px; padding: 0 16px; border-radius: 3px; font-size: 12px;
+    letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn-gold { background: var(--gold); color: var(--green-deep); font-weight: 600; }
+  .btn-gold:hover { background: oklch(0.78 0.1 82); }
+  .btn-ghost { background: transparent; border-color: oklch(0.75 0.1 82 / 0.6); color: oklch(0.85 0.06 82); }
+  .btn-ghost:hover { background: oklch(0.75 0.1 82 / 0.14); }
+  .btn-line { background: transparent; border: 1px solid var(--line); color: var(--ink-soft); }
+  .btn-line:hover { border-color: var(--gold); color: var(--gold-deep); }
+  .btn-sm { height: 28px; padding: 0 11px; font-size: 11px; }
+
+  main { max-width: 1160px; margin: 0 auto; padding: 40px 28px 90px; }
+
+  .page-head { display: flex; align-items: flex-end; gap: 18px; }
+  .page-head h1 { margin: 0; font-weight: 300; font-size: 46px; line-height: 1; letter-spacing: -0.02em; color: var(--green-deep); }
+  .lede { font-family: 'Newsreader', serif; font-style: italic; font-weight: 300; font-size: 19px; color: var(--ink-soft); margin: 10px 0 30px; }
+
+  /* Events grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .ev-card {
+    border: 1px solid var(--line); border-radius: 4px; background: var(--card);
+    padding: 22px 22px 20px; text-align: left; display: flex; flex-direction: column; gap: 14px;
+    transition: border-color .15s, transform .15s; width: 100%;
+  }
+  .ev-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+  .ev-card .client { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold-deep); }
+  .ev-card h3 { margin: 2px 0 0; font-weight: 300; font-size: 26px; line-height: 1.1; color: var(--green-deep); }
+  .ev-card .meta { font-size: 13px; color: var(--ink-mute); display: flex; gap: 14px; flex-wrap: wrap; }
+  .bar { height: 6px; border-radius: 3px; background: var(--line-soft); overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--ok)); border-radius: 3px; transition: width .3s; }
+  .bar-row { display: flex; align-items: center; gap: 12px; }
+  .bar-row .bar { flex: 1; }
+  .bar-row .pct { font-family: 'Newsreader', serif; font-size: 15px; color: var(--ink-soft); min-width: 42px; text-align: right; }
+
+  .empty { border: 1px dashed var(--line); border-radius: 5px; padding: 60px 30px; text-align: center; color: var(--ink-mute); }
+  .empty h3 { font-weight: 300; font-size: 28px; color: var(--green-deep); margin: 0 0 8px; }
+  .add-card {
+    border: 1px dashed oklch(0.55 0.09 82 / 0.5); background: transparent; color: var(--gold-deep);
+    display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 150px;
+    font-size: 15px; border-radius: 4px;
+  }
+  .add-card:hover { background: oklch(0.72 0.1 82 / 0.06); border-color: var(--gold); }
+
+  /* Event detail */
+  .back { background: none; border: none; color: var(--ink-mute); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 0; margin-bottom: 18px; }
+  .back:hover { color: var(--green-deep); }
+  .ev-hero { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+  .ev-hero h1 { margin: 6px 0 0; font-weight: 300; font-size: 44px; line-height: 1; letter-spacing: -0.02em; color: var(--green-deep); }
+  .ev-hero .sub { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 13.5px; color: var(--ink-soft); }
+  .ev-hero .sub b { color: var(--green-deep); font-weight: 500; }
+  .hero-stat { text-align: right; }
+  .hero-stat .big { font-family: 'Newsreader', serif; font-weight: 200; font-size: 54px; line-height: 1; color: var(--gold-deep); }
+  .hero-stat .lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); }
+
+  .layout { display: grid; grid-template-columns: 230px 1fr; gap: 40px; align-items: start; margin-top: 30px; }
+  .rail { position: sticky; top: 78px; display: flex; flex-direction: column; gap: 2px; }
+  .rail .r-phase { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold-deep); margin: 16px 0 6px; }
+  .rail a { display: flex; gap: 9px; padding: 5px 0 5px 11px; border-left: 2px solid var(--line-soft); font-size: 13px; color: var(--ink-soft); text-decoration: none; }
+  .rail a:hover { color: var(--green-deep); border-left-color: var(--gold); }
+  .rail a .rn { font-family: 'Newsreader', serif; font-size: 12px; color: var(--gold-deep); min-width: 16px; }
+
+  .panel { border: 1px solid var(--line); border-radius: 4px; background: var(--card); margin-bottom: 16px; overflow: hidden; }
+  .sec-head { display: grid; grid-template-columns: 48px 1fr auto; gap: 16px; width: 100%; text-align: left; background: transparent; border: none; padding: 20px 22px; align-items: start; }
+  .sec-head:hover { background: oklch(0.72 0.1 82 / 0.04); }
+  .sec-head .num { font-family: 'Newsreader', serif; font-weight: 200; font-size: 38px; line-height: 0.8; color: var(--gold); }
+  .sec-head .title { font-family: 'Newsreader', serif; font-weight: 300; font-size: 27px; line-height: 1.05; color: var(--green-deep); }
+  .sec-head .lede { font-family: 'Newsreader', serif; font-style: italic; font-weight: 300; font-size: 16px; color: var(--ink-soft); margin-top: 5px; max-width: 560px; }
+  .sec-head .prog { text-align: right; white-space: nowrap; }
+  .sec-head .prog .n { font-family: 'Newsreader', serif; font-size: 17px; color: var(--ink-soft); }
+  .sec-head .prog .mk { font-family: 'Newsreader', serif; font-size: 20px; color: var(--gold-deep); margin-left: 8px; }
+  .sec-body { padding: 0 22px 24px 86px; display: none; flex-direction: column; gap: 20px; }
+  .panel.open .sec-body { display: flex; }
+
+  .groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .group { border: 1px solid var(--line-soft); border-radius: 3px; padding: 14px 16px 16px; background: var(--bg); }
+  .group .g-lbl { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; margin-bottom: 8px; border-bottom: 1px solid var(--line-soft); font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-mute); }
+  .group .g-lbl .d { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+  .group .g-lbl .ct { margin-left: auto; font-family: 'Newsreader', serif; text-transform: none; letter-spacing: 0; }
+  .chk { display: flex; gap: 9px; align-items: baseline; padding: 4px 0; font-size: 14px; color: var(--ink-soft); cursor: pointer; }
+  .chk:hover { color: var(--green-deep); }
+  .chk input { width: 15px; height: 15px; flex-shrink: 0; }
+  .chk.done span { color: var(--ink-mute); text-decoration: line-through; text-decoration-color: oklch(0.72 0.1 82 / 0.6); }
+  .g-item { display: flex; gap: 9px; align-items: baseline; padding: 4px 0; font-size: 14px; color: var(--ink-soft); }
+  .g-item .dash { color: var(--gold); flex-shrink: 0; }
+
+  .note-wrap { display: flex; flex-direction: column; gap: 7px; }
+  .note-wrap label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-deep); }
+  textarea.note { width: 100%; min-height: 62px; resize: vertical; border: 1px solid var(--line); border-radius: 3px; padding: 10px 12px; font-size: 14px; color: var(--ink); background: var(--bg); line-height: 1.55; }
+  textarea.note:focus { border-color: var(--gold); background: var(--card); }
+  .note-hint { font-family: 'Newsreader', serif; font-style: italic; font-size: 14px; color: var(--ink-mute); border-left: 2px solid var(--gold); padding-left: 12px; }
+
+  /* Q&A answer boxes */
+  .qa { border: 1px solid var(--line-soft); border-radius: 3px; padding: 14px 16px 16px; background: var(--bg); }
+  .qa-row { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+  .qa-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .qa-q { display: flex; gap: 9px; align-items: baseline; font-size: 14.5px; color: var(--green-deep); cursor: pointer; margin-bottom: 8px; }
+  .qa-q input { width: 15px; height: 15px; flex-shrink: 0; }
+  .qa-q.done span { color: var(--ink-mute); }
+  textarea.qa-a { width: 100%; min-height: 48px; resize: vertical; border: 1px solid var(--line); border-radius: 3px; padding: 8px 11px; font-size: 14px; color: var(--ink); background: var(--card); line-height: 1.5; margin-left: 24px; width: calc(100% - 24px); }
+  textarea.qa-a:focus { border-color: var(--gold); }
+
+  /* Add boxes (custom budget items, vendors) */
+  .addbox { border: 1px solid var(--line-soft); border-radius: 3px; padding: 14px 16px 16px; background: var(--bg); }
+  .add-list, .vendor-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .add-row { display: flex; align-items: center; gap: 8px; }
+  .add-row .chk { flex: 1; padding: 2px 0; }
+  .empty-line { font-family: 'Newsreader', serif; font-style: italic; font-size: 14px; color: var(--ink-mute); padding: 4px 0 8px; }
+  .add-form { display: flex; gap: 8px; }
+  .add-form input { flex: 1; height: 34px; border: 1px solid var(--line); border-radius: 3px; padding: 0 11px; font-size: 14px; color: var(--ink); background: var(--card); }
+  .add-form input:focus { border-color: var(--gold); }
+  .add-form .btn { flex-shrink: 0; }
+  .vendor-row { display: flex; align-items: center; gap: 12px; padding: 8px 11px; border: 1px solid var(--line-soft); border-radius: 3px; }
+  .vendor-row .v-name { flex: 1; min-width: 0; font-size: 14.5px; color: var(--green-deep); font-weight: 500; }
+  .v-signed { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-mute); cursor: pointer; white-space: nowrap; }
+  .v-signed input { width: 15px; height: 15px; }
+  .v-signed.on { color: var(--ok); }
+  .rm { background: none; border: none; color: var(--ink-mute); font-size: 18px; line-height: 1; padding: 2px 6px; cursor: pointer; flex-shrink: 0; }
+  .rm:hover { color: oklch(0.5 0.15 25); }
+
+  /* Per-item status pill (budget lines) */
+  .status-row { padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
+  .status-row:last-child { border-bottom: none; }
+  .add-row .status-lbl { flex: 1; }
+  .status-lbl { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .status-lbl .s-text { flex: 1; font-size: 14px; color: var(--ink-soft); }
+  .status-lbl .s-text.fin { color: var(--green-deep); }
+  .status-pill { flex-shrink: 0; border: 1px solid var(--line); border-radius: 20px; padding: 3px 11px; font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-mute); white-space: nowrap; }
+  .status-lbl:hover .status-pill { border-color: var(--gold); }
+  .status-pill.on { border-color: var(--ok); color: var(--ok); }
+  .amt-input { width: 96px; flex-shrink: 0; height: 30px; border: 1px solid var(--line); border-radius: 3px; padding: 0 9px; font-family: 'Newsreader', serif; font-size: 15px; color: var(--green-deep); background: var(--card); text-align: right; }
+  .amt-input:focus { border-color: var(--gold); }
+  .budget-sum-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 14px 2px 2px; }
+  .budget-sum-row .bs-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-deep); }
+  .budget-sum-row .bs-value { font-family: 'Newsreader', serif; font-size: 26px; color: var(--green-deep); }
+  .budget-sum-row .bs-note { font-family: 'Newsreader', serif; font-style: italic; font-size: 13px; color: var(--ink-mute); }
+
+  /* Budget total */
+  .budget-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .budget-input { flex: 1; min-width: 160px; height: 38px; border: 1px solid var(--line); border-radius: 3px; padding: 0 12px; font-size: 16px; font-family: 'Newsreader', serif; color: var(--green-deep); background: var(--card); }
+  .budget-input:focus { border-color: var(--gold); }
+  .v-signed.status { border: 1px solid var(--line); border-radius: 20px; padding: 5px 12px; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .v-signed.status.on { border-color: var(--ok); }
+
+  /* Attachments */
+  .file-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .file-row { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid var(--line-soft); border-radius: 3px; }
+  .file-row .f-ic { font-size: 16px; color: var(--gold-deep); flex-shrink: 0; }
+  .file-row .f-meta { flex: 1; min-width: 0; }
+  .file-row .f-name { font-size: 14px; color: var(--green-deep); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-row .f-size { font-size: 12px; color: var(--ink-mute); }
+  .file-btn { display: inline-flex; cursor: pointer; }
+  .file-hint { font-size: 12px; color: var(--ink-mute); margin-top: 8px; }
+
+  /* Collaborators */
+  .collab { border: 1px solid var(--line); border-radius: 4px; background: var(--card); padding: 20px 22px; margin-bottom: 16px; }
+  .collab h3 { margin: 0 0 4px; font-weight: 300; font-size: 24px; color: var(--green-deep); }
+  .collab .desc { font-size: 13px; color: var(--ink-mute); margin: 0 0 16px; }
+  .collab .pill-note { font-family: 'Newsreader', serif; font-style: italic; font-size: 13.5px; color: var(--gold-deep); background: oklch(0.72 0.1 82 / 0.08); border-radius: 3px; padding: 8px 12px; margin-bottom: 16px; }
+  .collab-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .collab-row { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid var(--line-soft); border-radius: 3px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--green); color: oklch(0.96 0.01 90); display: flex; align-items: center; justify-content: center; font-family: 'Newsreader', serif; font-size: 15px; flex-shrink: 0; }
+  .collab-row .who { flex: 1; min-width: 0; }
+  .collab-row .who .nm { font-size: 14px; color: var(--green-deep); font-weight: 500; }
+  .collab-row .who .em { font-size: 12px; color: var(--ink-mute); }
+  .collab-row .role { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-deep); border: 1px solid var(--line); border-radius: 20px; padding: 3px 10px; }
+  .collab-row .rm { background: none; border: none; color: var(--ink-mute); font-size: 18px; line-height: 1; padding: 2px 6px; }
+  .collab-row .rm:hover { color: oklch(0.5 0.15 25); }
+  .collab-form { display: flex; gap: 8px; flex-wrap: wrap; }
+  .collab-form input, .collab-form select { height: 36px; border: 1px solid var(--line); border-radius: 3px; padding: 0 11px; font-size: 13.5px; color: var(--ink); background: var(--bg); }
+  .collab-form input.nm { flex: 1; min-width: 130px; }
+  .collab-form input.em { flex: 1.4; min-width: 160px; }
+
+  /* Guide search */
+  .search-wrap { position: relative; max-width: 520px; margin: 0 0 8px; }
+  .search-wrap input { width: 100%; height: 46px; border: 1px solid var(--line); border-radius: 4px; padding: 0 16px; font-size: 16px; color: var(--ink); background: var(--card); }
+  .search-wrap input:focus { border-color: var(--gold); }
+  .result-count { font-size: 13px; color: var(--ink-mute); margin: 6px 0 24px; }
+  .g-phase-label { display: flex; align-items: baseline; gap: 14px; padding: 26px 0 14px; }
+  .g-phase-label h2 { margin: 0; font-family: 'Newsreader', serif; font-weight: 300; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
+  .g-phase-label .rule { flex: 1; height: 1px; background: var(--line); }
+  .g-sec { border-top: 1px solid var(--line); padding: 22px 0 24px; }
+  .g-sec .g-top { display: grid; grid-template-columns: 52px 1fr; gap: 16px; }
+  .g-sec .g-num { font-family: 'Newsreader', serif; font-weight: 200; font-size: 40px; line-height: 0.8; color: var(--gold); }
+  .g-sec .g-title { font-family: 'Newsreader', serif; font-weight: 300; font-size: 28px; line-height: 1.05; color: var(--green-deep); }
+  .g-sec .g-lede { font-family: 'Newsreader', serif; font-style: italic; font-weight: 300; font-size: 16px; color: var(--ink-soft); margin-top: 5px; max-width: 620px; }
+  .g-sec .groups { margin: 18px 0 0 68px; }
+  .no-results { text-align: center; padding: 50px 20px; color: var(--ink-mute); font-family: 'Newsreader', serif; font-style: italic; font-size: 20px; }
+
+  /* Modal */
+  .modal-bg { position: fixed; inset: 0; background: oklch(0.28 0.03 160 / 0.4); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .modal { background: var(--bg); border-radius: 6px; width: 100%; max-width: 460px; padding: 30px 30px 26px; box-shadow: 0 20px 60px oklch(0.28 0.03 160 / 0.25); }
+  .modal h2 { margin: 0 0 4px; font-weight: 300; font-size: 30px; color: var(--green-deep); }
+  .modal p.sub { margin: 0 0 22px; font-family: 'Newsreader', serif; font-style: italic; color: var(--ink-soft); }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-deep); }
+  .field input { height: 40px; border: 1px solid var(--line); border-radius: 3px; padding: 0 12px; font-size: 15px; color: var(--ink); background: var(--card); }
+  .field input:focus { border-color: var(--gold); }
+  .field .opt { text-transform: none; letter-spacing: 0; color: var(--ink-mute); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+  footer { border-top: 1px solid var(--line); color: var(--ink-mute); }
+  .foot-in { max-width: 1160px; margin: 0 auto; padding: 20px 28px; display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; }
+    .rail { display: none; }
+    .ev-hero { grid-template-columns: 1fr; }
+    .hero-stat { text-align: left; }
+    .sec-body { padding-left: 22px; }
+    .g-sec .groups { margin-left: 0; }
+    nav.tabs { display: none; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="head-in">
+      <div class="brand"><span class="dot"></span><span class="t">Hospitality Playbook</span></div>
+      <nav class="tabs">
+        <button class="tab" data-act="go-home">Events</button>
+        <button class="tab" data-act="go-guide">Guide</button>
+      </nav>
+      <div class="spacer"></div>
+      <button class="btn btn-gold" data-act="new-event">+ New event</button>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <footer>
+    <div class="foot-in">
+      <span>Corporate Hospitality Playbook · Event Workspace</span>
+      <span>Local prototype · saved in this browser</span>
+    </div>
+  </footer>
+
+<script>
+"use strict";
+
+/* ---------- Playbook content (from Corporate Hospitality Playbook v1.0) ---------- */
+const PHASES = [
+  { id: 0, label: 'Foundation' },
+  { id: 1, label: 'Program Elements' },
+  { id: 2, label: 'Execution' },
+  { id: 3, label: 'After the Event' }
+];
+
+const SECTIONS = [
+  { num: '01', phase: 0, title: 'Define Success Before Planning', lede: "Before selecting a venue or designing invitations, determine why the event exists.", groups: [
+    { label: 'Common business objectives', items: ['Strengthen client relationships', 'Reward high-performing employees', 'Introduce a new product', 'Celebrate company milestones', 'Build executive relationships', 'Support sponsorship investments', 'Generate new business opportunities', 'Educate customers', 'Increase brand loyalty'] },
+    { label: 'Questions to ask', items: ['What business outcome are we trying to achieve?', 'Who needs to attend?', 'What should guests remember?', 'What action should guests take after the event?', 'How will success be measured?'] }
+  ] },
+  { num: '02', phase: 0, title: 'Know Your Audience', lede: 'Every hospitality experience should be designed around the guest — not around logistics.', groups: [
+    { label: 'Consider', items: ['Seniority', 'Industry', 'Culture', 'Interests', 'Accessibility needs', 'Dietary requirements', 'Travel experience', 'Previous interactions with your company'] },
+    { label: 'Persona · Executives', items: ['Efficient', 'Exclusive', 'High-touch'] },
+    { label: 'Persona · Clients', items: ['Relationship focused', 'Personalized', 'Comfortable networking'] },
+    { label: 'Persona · Prospects', items: ['Brand education', 'Product immersion', 'Meaningful conversations'] },
+    { label: 'Persona · Employees', items: ['Recognition', 'Celebration', 'Teambuilding'] }
+  ] },
+  { num: '03', phase: 0, title: 'Experience Design', lede: "Outstanding events don't happen by accident. They are intentionally designed from the guest's perspective.", groups: [
+    { label: 'Journey · Before arrival', items: ['Invitation', 'Registration', 'Confirmation', 'Travel information', 'Event reminders', 'Mobile app or itinerary'] },
+    { label: 'Journey · Arrival', items: ['Easy parking', 'Clear signage', 'Friendly greeting', 'Fast registration', 'Comfortable waiting area', 'Welcome beverage'] },
+    { label: 'Journey · During the event', items: ['Networking', 'Learning', 'Entertainment', 'Relaxation', 'Personal interaction'] },
+    { label: 'Journey · Departure', items: ['Thank-you gift', 'Transportation assistance', 'Photo sharing', 'Follow-up communication', 'Personalized farewell'] }
+  ], note: 'First impressions matter at arrival; balance structure with flexibility during; end on a high note at departure.' },
+  { num: '04', phase: 0, title: 'Budget Planning', lede: 'A comprehensive budget minimizes surprises.', groups: [
+    { label: 'Typical categories', items: ['Venue', 'Food & Beverage', 'Transportation', 'Hotel accommodations', 'Entertainment', 'Audio visual', 'Décor', 'Floral', 'Printing', 'Photography', 'Videography', 'Technology', 'Registration platform', 'Labor', 'Security', 'Insurance', 'Contingency (10–15%)'] }
+  ] },
+  { num: '05', phase: 1, title: 'Venue Selection', lede: 'The venue establishes the tone for the experience.', groups: [
+    { label: 'Evaluate', items: ['Location', 'Accessibility', 'Parking', 'Guest flow', 'Capacity', 'Private spaces', 'Technology', 'Lighting', 'Outdoor options', 'Branding opportunities', 'Service reputation', 'Backup plans'] },
+    { label: 'Walkthrough checklist', items: ['Entrance', 'Registration', 'Restrooms', 'Kitchen access', 'Emergency exits', 'Loading dock', 'ADA accessibility', 'Wi-Fi strength', 'Power availability', 'Weather contingencies'] }
+  ] },
+  { num: '06', phase: 1, title: 'Food & Beverage', lede: 'Food creates memorable moments.', groups: [
+    { label: 'Design menus that are', items: ['Seasonal', 'Inclusive', 'Easy to enjoy', 'Representative of the destination', 'Appropriate for the schedule'] },
+    { label: 'Best practices', items: ['Offer vegetarian, vegan, gluten-free and allergy-friendly options', 'Label foods clearly', 'Avoid long buffet lines', 'Keep water readily available', 'Schedule meal timing carefully'] }
+  ] },
+  { num: '07', phase: 1, title: 'Entertainment', lede: 'Entertainment should support — not distract from — the event objectives.', groups: [
+    { label: 'Examples include', items: ['Live music', 'Guest speakers', 'Interactive experiences', 'Art demonstrations', 'Cooking experiences', 'Wellness activities', 'Sports experiences', 'Product demonstrations', 'Hands-on workshops', 'Cultural performances'] }
+  ] },
+  { num: '08', phase: 1, title: 'Branding', lede: 'Branding should feel intentional rather than overwhelming.', groups: [
+    { label: 'Use consistent', items: ['Colors', 'Typography', 'Messaging', 'Signage', 'Staff uniforms', 'Printed materials', 'Digital assets', 'Presentation templates'] }
+  ], note: 'Look for opportunities to reinforce the brand through thoughtful details rather than excessive logos.' },
+  { num: '09', phase: 1, title: 'Personalization', lede: 'Guests remember how you made them feel.', groups: [
+    { label: 'Ideas include', items: ['Personalized welcome notes', 'Preferred beverages', 'Reserved seating', 'Custom gifts', 'Birthday recognition', 'Anniversary celebrations', 'Individual dietary accommodations', 'Tailored agendas'] }
+  ] },
+  { num: '10', phase: 2, title: 'Logistics & Operations', lede: 'Behind every seamless event is exceptional operational planning.', groups: [
+    { label: 'Core documents', items: ['Master Timeline', 'Run of Show', 'Production Schedule', 'Vendor Contact List', 'Emergency Contacts', 'Staff Assignments', 'Transportation Manifest', 'Rooming List', 'VIP List', 'Floor Plans', 'Inventory List', 'Communication Plan'] }
+  ] },
+  { num: '11', phase: 2, title: 'Vendor Management', lede: 'Treat vendors as strategic partners.', groups: [
+    { label: 'Expectations', items: ['Clear contracts', 'Defined deliverables', 'Communication cadence', 'Payment schedules', 'Setup timelines', 'Load-in procedures', 'Brand standards', 'Emergency contacts'] }
+  ], note: 'Conduct pre-event walkthroughs with all major vendors.' },
+  { num: '12', phase: 2, title: 'Staff Excellence', lede: 'Your staff represents your brand.', groups: [
+    { label: 'Train every team member on', items: ['Event objectives', 'Guest profiles', 'Schedule', 'Venue layout', 'Emergency procedures', 'Dress code', 'Customer service expectations', 'Escalation process'] }
+  ], note: 'Encourage proactive hospitality rather than reactive problem solving.' },
+  { num: '13', phase: 2, title: 'Risk Management', lede: 'Every event should include contingency planning.', groups: [
+    { label: 'Prepare for', items: ['Weather', 'Medical emergencies', 'Transportation delays', 'Technology failures', 'Speaker cancellations', 'Power outages', 'Vendor issues', 'Security concerns', 'Guest complaints'] }
+  ], note: "Build response plans before they're needed." },
+  { num: '14', phase: 2, title: 'Communication', lede: 'Consistency builds confidence.', groups: [
+    { label: 'Develop plans for', items: ['Guests', 'Executives', 'Staff', 'Vendors', 'Sponsors', 'Media', 'Venue partners'] }
+  ], note: 'Communication should be timely, concise and informative.' },
+  { num: '15', phase: 2, title: 'Sustainability', lede: 'Incorporate responsible event practices whenever possible.', groups: [
+    { label: 'Examples', items: ['Digital materials', 'Reusable signage', 'Local sourcing', 'Reduced food waste', 'Donation programs', 'Recycling', 'Energy-efficient lighting', 'Sustainable gifting'] }
+  ] },
+  { num: '16', phase: 3, title: 'Measuring Success', lede: 'Evaluate both operational performance and business outcomes.', groups: [
+    { label: 'Operational metrics', items: ['Attendance', 'Registration completion', 'Check-in time', 'Transportation performance', 'Budget variance', 'Vendor performance', 'Timeline adherence', 'Incident reports'] },
+    { label: 'Business metrics', items: ['Client retention', 'New opportunities created', 'Executive engagement', 'Sales influenced', 'Sponsor satisfaction', 'Employee engagement', 'Brand awareness', 'Media impressions', 'Social engagement'] }
+  ] },
+  { num: '17', phase: 3, title: 'Post-Event Follow-Up', lede: "The event doesn't end when guests leave.", groups: [
+    { label: 'Within 48 hours', items: ['Send thank-you messages', 'Share photos', 'Distribute surveys', 'Recognize staff', 'Pay vendors promptly', 'Document lessons learned', 'Schedule internal debriefs'] }
+  ] }
+];
+
+const TIMELINE = [
+  { label: '90+ days', sub: 'Define', items: ['Define objectives', 'Secure budget', 'Select venue', 'Build project timeline', 'Identify stakeholders'] },
+  { label: '60 days', sub: 'Commit', items: ['Develop guest list', 'Confirm vendors', 'Launch invitations', 'Finalize branding', 'Develop menus', 'Reserve transportation'] },
+  { label: '30 days', sub: 'Finalize', items: ['Confirm attendance', 'Finalize seating', 'Complete run of show', 'Print materials', 'Confirm staffing'] },
+  { label: '14 days', sub: 'Rehearse', items: ['Conduct venue walkthrough', 'Confirm all vendors', 'Final guest communication', 'Review emergency plans'] },
+  { label: 'Event day', sub: 'Deliver', items: ['Staff briefing', 'Registration readiness', 'Vendor confirmations', 'Executive briefing', 'Guest experience monitoring', 'Issue resolution', 'Continuous communication'] },
+  { label: 'Post event', sub: 'Close', items: ['Debrief', 'Survey', 'ROI reporting', 'Thank-you communications', 'Archive documentation'] }
+];
+
+const ROLES = ['Owner', 'Planner', 'Coordinator', 'Vendor', 'Executive', 'Viewer'];
+
+/* Per-section enhancements */
+const ANSWERABLE = { s01: ['Questions to ask'] };   // groups whose items get an answer box
+const CUSTOM_SECTIONS = { s04: 'Additional budget items' }; // sections that accept custom line items
+const VENDOR_SECTION = 's11';                        // section that gets the vendor tracker
+const ATTACH_SECTIONS = { s17: 'Key learnings & documents' }; // sections that accept file attachments
+
+/* Flat playbook: the 17 sections + a Timeline section. Used by both event checklists and the Guide. */
+const PLAYBOOK = SECTIONS.map(s => ({
+  id: 's' + s.num, num: s.num, phase: s.phase, title: s.title, lede: s.lede, note: s.note || '', groups: s.groups
+}));
+PLAYBOOK.push({
+  id: 'timeline', num: 'T', phase: 3, title: 'Planning Timeline', lede: 'Six windows, from first brief to final report.', note: '',
+  groups: TIMELINE.map(t => ({ label: t.label + ' · ' + t.sub, items: t.items }))
+});
+
+function itemCount(sec) { return sec.groups.reduce((n, g) => n + g.items.length, 0); }
+const TOTAL_ITEMS = PLAYBOOK.reduce((n, s) => n + itemCount(s), 0);
+
+/* ---------- State + storage ---------- */
+const STORE = 'hospitality-events-v1';
+let state = { events: [], view: 'home', currentId: null, modal: false, guideQuery: '' };
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) { const d = JSON.parse(raw); if (d && Array.isArray(d.events)) state.events = d.events; }
+  } catch (e) { console.warn('load failed', e); }
+}
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify({ events: state.events })); }
+  catch (e) { console.warn('save failed', e); }
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function currentEvent() { return state.events.find(e => e.id === state.currentId) || null; }
+
+function customItemsFor(ev, sid) { return (ev.customItems && ev.customItems[sid]) || []; }
+
+function eventProgress(ev) {
+  let done = 0;
+  for (const k in ev.checks) if (ev.checks[k]) done++;
+  let custom = 0;
+  if (ev.customItems) for (const sid in ev.customItems) custom += ev.customItems[sid].length;
+  const total = TOTAL_ITEMS + custom;
+  return { done, total, pct: total ? Math.round(done / total * 100) : 0 };
+}
+function sectionProgress(ev, sec) {
+  let done = 0, total = 0;
+  sec.groups.forEach((g, gi) => g.items.forEach((_, ii) => {
+    total++;
+    if (ev.checks[sec.id + '|' + gi + '|' + ii]) done++;
+  }));
+  customItemsFor(ev, sec.id).forEach(it => {
+    total++;
+    if (ev.checks[sec.id + '|c|' + it.id]) done++;
+  });
+  return { done, total };
+}
+
+/* ---------- Utilities ---------- */
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function hl(text, q) {
+  const s = esc(text);
+  if (!q) return s;
+  const rq = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  try { return s.replace(new RegExp('(' + rq + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return s; }
+}
+function initials(name) {
+  const p = name.trim().split(/\s+/);
+  return ((p[0] || '')[0] || '?').toUpperCase() + (p.length > 1 ? (p[p.length - 1][0] || '').toUpperCase() : '');
+}
+function fmtDate(d) {
+  if (!d) return 'Date TBD';
+  const dt = new Date(d + 'T00:00');
+  if (isNaN(dt)) return esc(d);
+  return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/* ---------- Render ---------- */
+const app = document.getElementById('app');
+
+function render() {
+  document.querySelectorAll('.tab').forEach(t => {
+    const act = t.dataset.act;
+    t.classList.toggle('active', (act === 'go-home' && (state.view === 'home' || state.view === 'event')) || (act === 'go-guide' && state.view === 'guide'));
+  });
+  try {
+    if (state.view === 'guide') renderGuide();
+    else if (state.view === 'event' && currentEvent()) renderEvent();
+    else { state.view = 'home'; renderHome(); }
+  } catch (e) {
+    console.error('render error', e);
+    app.innerHTML = '<div class="empty"><h3>Something went wrong</h3><p>' + esc(e.message) + '</p></div>';
+  }
+}
+
+function renderHome() {
+  const evs = state.events;
+  let body;
+  if (!evs.length) {
+    body = `<div class="empty">
+      <h3>No events yet</h3>
+      <p>Create your first event to start working through the hospitality playbook as a live checklist.</p>
+      <p style="margin-top:18px"><button class="btn btn-gold" data-act="new-event">+ Create your first event</button></p>
+    </div>`;
+  } else {
+    body = `<div class="grid">` + evs.map(ev => {
+      const p = eventProgress(ev);
+      const collab = (ev.collaborators || []).length;
+      return `<button class="ev-card" data-act="open-event" data-id="${ev.id}">
+        <div>
+          <div class="client">${esc(ev.client || 'Client')}</div>
+          <h3>${esc(ev.name)}</h3>
+        </div>
+        <div class="meta"><span>◷ ${fmtDate(ev.date)}</span>${ev.venue ? `<span>◎ ${esc(ev.venue)}</span>` : ''}<span>♦ ${collab} collaborator${collab === 1 ? '' : 's'}</span></div>
+        <div class="bar-row"><div class="bar"><span style="width:${p.pct}%"></span></div><div class="pct">${p.pct}%</div></div>
+      </button>`;
+    }).join('') +
+    `<button class="ev-card add-card" data-act="new-event">+ New event</button></div>`;
+  }
+  app.innerHTML = `
+    <span class="eyebrow">Workspace</span>
+    <div class="page-head"><h1>Your Events</h1></div>
+    <p class="lede">Each event runs the full ${PLAYBOOK.length}-part playbook as its own checklist — with notes and collaborators.</p>
+    ${body}`;
+}
+
+/* --- Guide (standalone, searchable) --- */
+function renderGuide() {
+  app.innerHTML = `
+    <span class="eyebrow">Reference</span>
+    <div class="page-head"><h1>Playbook Guide</h1></div>
+    <p class="lede">Browse and search every step of the playbook — no event needed.</p>
+    <div class="search-wrap">
+      <input type="search" data-act="search" placeholder="Search the playbook…" value="${esc(state.guideQuery)}" autocomplete="off">
+    </div>
+    <div id="guideResults">${guideResults(state.guideQuery)}</div>`;
+  const inp = app.querySelector('[data-act="search"]');
+  if (inp) { inp.focus(); const v = inp.value; inp.value = ''; inp.value = v; }
+}
+
+function guideResults(rawQ) {
+  const q = rawQ.trim().toLowerCase();
+  let matchedSecs = 0, matchedItems = 0;
+  const phasesHtml = PHASES.map(ph => {
+    const secs = PLAYBOOK.filter(s => s.phase === ph.id);
+    const secHtml = secs.map(s => {
+      const headMatch = !q || [s.num, s.title, s.lede, s.note].join(' ').toLowerCase().includes(q);
+      const groups = s.groups.map(g => {
+        const items = g.items.filter(it => !q || headMatch || it.toLowerCase().includes(q) || g.label.toLowerCase().includes(q));
+        return { label: g.label, items };
+      }).filter(g => g.items.length);
+      const anyItem = groups.reduce((n, g) => n + g.items.length, 0);
+      if (q && !headMatch && anyItem === 0) return '';
+      matchedSecs++; matchedItems += anyItem;
+      const groupsHtml = groups.map(g => `
+        <div class="group">
+          <div class="g-lbl"><span class="d"></span>${hl(g.label, q)}<span class="ct">${g.items.length}</span></div>
+          ${g.items.map(it => `<div class="g-item"><span class="dash">—</span><span>${hl(it, q)}</span></div>`).join('')}
+        </div>`).join('');
+      return `<div class="g-sec">
+        <div class="g-top">
+          <div class="g-num">${s.num}</div>
+          <div><div class="g-title">${hl(s.title, q)}</div><div class="g-lede">${hl(s.lede, q)}</div></div>
+        </div>
+        <div class="groups">${groupsHtml}</div>
+        ${s.note ? `<div class="note-hint" style="margin:16px 0 0 68px">${hl(s.note, q)}</div>` : ''}
+      </div>`;
+    }).filter(Boolean).join('');
+    if (!secHtml) return '';
+    return `<div class="g-phase-label"><h2>${ph.label}</h2><span class="rule"></span></div>${secHtml}`;
+  }).filter(Boolean).join('');
+
+  const count = q
+    ? `<div class="result-count">${matchedSecs} section${matchedSecs === 1 ? '' : 's'} match “${esc(rawQ.trim())}”</div>`
+    : `<div class="result-count">${PLAYBOOK.length} sections · ${TOTAL_ITEMS} steps</div>`;
+  const inner = phasesHtml || `<div class="no-results">No steps match “${esc(rawQ.trim())}”.</div>`;
+  return count + inner;
+}
+
+/* --- Event detail --- */
+function renderEvent() {
+  const ev = currentEvent();
+  const p = eventProgress(ev);
+
+  const rail = PHASES.map(ph => {
+    const secs = PLAYBOOK.filter(s => s.phase === ph.id);
+    if (!secs.length) return '';
+    return `<div class="r-phase">${ph.label}</div>` + secs.map(s =>
+      `<a href="#${s.id}"><span class="rn">${s.num}</span><span>${esc(s.title)}</span></a>`).join('');
+  }).join('');
+
+  const sections = PLAYBOOK.map(s => sectionPanel(ev, s)).join('');
+
+  app.innerHTML = `
+    <button class="back" data-act="go-home">← All events</button>
+    <div class="ev-hero">
+      <div>
+        <span class="eyebrow">${esc(ev.client || 'Client')}</span>
+        <h1>${esc(ev.name)}</h1>
+        <div class="sub">
+          <span><b>When</b> · ${fmtDate(ev.date)}</span>
+          ${ev.venue ? `<span><b>Where</b> · ${esc(ev.venue)}</span>` : ''}
+          <span><b>Progress</b> · ${p.done} of ${p.total} steps</span>
+        </div>
+      </div>
+      <div class="hero-stat"><div class="big">${p.pct}%</div><div class="lbl">Complete</div></div>
+    </div>
+    <div class="layout">
+      <nav class="rail">${rail}</nav>
+      <div>
+        ${collabPanel(ev)}
+        ${sections}
+      </div>
+    </div>`;
+}
+
+function collabPanel(ev) {
+  const list = (ev.collaborators || []).map(c => `
+    <div class="collab-row">
+      <div class="avatar">${esc(initials(c.name))}</div>
+      <div class="who"><div class="nm">${esc(c.name)}</div><div class="em">${esc(c.email || 'no email')}</div></div>
+      <span class="role">${esc(c.role)}</span>
+      <button class="rm" title="Remove" data-act="remove-collab" data-id="${c.id}">×</button>
+    </div>`).join('') || `<div class="note-hint">No collaborators yet. Add teammates who are helping run this event.</div>`;
+
+  return `<div class="collab" id="collab">
+    <h3>Collaborators</h3>
+    <p class="desc">People working this event with you.</p>
+    <div class="pill-note">Prototype — collaborators are saved locally in this browser. Real email invites &amp; live sharing come with the multi-user version.</div>
+    <div class="collab-list">${list}</div>
+    <form class="collab-form" data-act="add-collab">
+      <input class="nm" name="cName" placeholder="Name" required>
+      <input class="em" name="cEmail" type="email" placeholder="email@company.com">
+      <select name="cRole">${ROLES.map(r => `<option>${r}</option>`).join('')}</select>
+      <button class="btn btn-line btn-sm" type="submit">Invite</button>
+    </form>
+  </div>`;
+}
+
+function checkboxItem(ev, key, text) {
+  const done = !!ev.checks[key];
+  return `<label class="chk${done ? ' done' : ''}"><input type="checkbox" data-key="${key}" ${done ? 'checked' : ''}><span>${esc(text)}</span></label>`;
+}
+
+function statusItem(ev, key, text) {
+  const done = !!ev.checks[key];
+  const amt = (ev.amounts && ev.amounts[key]) || '';
+  return `<label class="status-lbl"><input type="checkbox" data-key="${key}" ${done ? 'checked' : ''} hidden><span class="s-text${done ? ' fin' : ''}">${esc(text)}</span><input class="amt-input" data-amount="${key}" value="${esc(amt)}" placeholder="$0" autocomplete="off"><span class="status-pill${done ? ' on' : ''}">${done ? 'Final' : 'In process'}</span></label>`;
+}
+
+function groupBlock(ev, s, g, gi) {
+  const budget = s.id === 's04';
+  return `<div class="group${budget ? ' group-budget' : ''}">
+    <div class="g-lbl"><span class="d"></span>${esc(g.label)}<span class="ct">${g.items.length}</span></div>
+    ${g.items.map((it, ii) => {
+      const key = s.id + '|' + gi + '|' + ii;
+      return budget ? `<div class="status-row">${statusItem(ev, key, it)}</div>` : checkboxItem(ev, key, it);
+    }).join('')}
+  </div>`;
+}
+
+function answerBlock(ev, s, g, gi) {
+  return `<div class="qa">
+    <div class="g-lbl"><span class="d"></span>${esc(g.label)}</div>
+    ${g.items.map((it, ii) => {
+      const key = s.id + '|' + gi + '|' + ii;
+      const done = !!ev.checks[key];
+      const aKey = 'a|' + s.id + '|' + gi + '|' + ii;
+      const ans = (ev.answers && ev.answers[aKey]) || '';
+      return `<div class="qa-row">
+        <label class="qa-q${done ? ' done' : ''}"><input type="checkbox" data-key="${key}" ${done ? 'checked' : ''}><span>${esc(it)}</span></label>
+        <textarea class="qa-a" data-answer="${aKey}" placeholder="Your answer…">${esc(ans)}</textarea>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function customItemsBlock(ev, s) {
+  const list = customItemsFor(ev, s.id);
+  const rows = list.map(it => {
+    const key = s.id + '|c|' + it.id;
+    const cell = s.id === 's04' ? statusItem(ev, key, it.text) : checkboxItem(ev, key, it.text);
+    return `<div class="add-row">${cell}<button class="rm" title="Remove" data-act="remove-item" data-sec="${s.id}" data-id="${it.id}">×</button></div>`;
+  }).join('') || `<div class="empty-line">No custom items yet.</div>`;
+  return `<div class="addbox">
+    <div class="g-lbl"><span class="d"></span>${esc(CUSTOM_SECTIONS[s.id])}${list.length ? `<span class="ct">${list.length}</span>` : ''}</div>
+    <div class="add-list">${rows}</div>
+    <form class="add-form" data-act="add-item" data-sec="${s.id}">
+      <input name="itemText" placeholder="Add a budget line item…" autocomplete="off" required>
+      <button class="btn btn-line btn-sm" type="submit">+ Add</button>
+    </form>
+  </div>`;
+}
+
+function vendorBlock(ev) {
+  const list = ev.vendors || [];
+  const rows = list.map(v => `
+    <div class="vendor-row">
+      <div class="v-name">${esc(v.name)}</div>
+      <label class="v-signed${v.signed ? ' on' : ''}"><input type="checkbox" data-vendor="${v.id}" ${v.signed ? 'checked' : ''}><span>Contract signed</span></label>
+      <button class="rm" title="Remove" data-act="remove-vendor" data-id="${v.id}">×</button>
+    </div>`).join('') || `<div class="empty-line">No vendors added yet.</div>`;
+  return `<div class="addbox">
+    <div class="g-lbl"><span class="d"></span>Vendors${list.length ? `<span class="ct">${list.length}</span>` : ''}</div>
+    <div class="vendor-list">${rows}</div>
+    <form class="add-form" data-act="add-vendor">
+      <input name="vendorName" placeholder="Vendor name…" autocomplete="off" required>
+      <button class="btn btn-line btn-sm" type="submit">+ Add vendor</button>
+    </form>
+  </div>`;
+}
+
+function fmtSize(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(0) + ' KB';
+  return (n / 1048576).toFixed(1) + ' MB';
+}
+
+function parseAmt(v) { const n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n; }
+function fmtMoney(n) { return '$' + n.toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+function budgetSum(ev) { let t = 0; const a = ev.amounts || {}; for (const k in a) t += parseAmt(a[k]); return t; }
+
+function budgetBlock(ev) {
+  const b = ev.budget || { total: '', final: false };
+  return `<div class="addbox">
+    <div class="g-lbl"><span class="d"></span>Budget total</div>
+    <div class="budget-row">
+      <input class="budget-input" data-budget="total" placeholder="e.g. $50,000" autocomplete="off" value="${esc(b.total || '')}">
+      <label class="v-signed status${b.final ? ' on' : ''}"><input type="checkbox" data-budget="final" ${b.final ? 'checked' : ''}><span>${b.final ? 'Final' : 'In process'}</span></label>
+    </div>
+  </div>`;
+}
+
+function budgetSumBlock(ev) {
+  return `<div class="budget-sum-row">
+    <span class="bs-label">Line items total</span>
+    <span class="bs-value" id="budget-sum">${fmtMoney(budgetSum(ev))}</span>
+    <span class="bs-note">Sum of the amounts entered on the lines above</span>
+  </div>`;
+}
+
+function attachBlock(ev, sid, heading) {
+  const list = (ev.attachments && ev.attachments[sid]) || [];
+  const rows = list.map(a => `
+    <div class="file-row">
+      <span class="f-ic">▤</span>
+      <div class="f-meta"><div class="f-name">${esc(a.name)}</div><div class="f-size">${fmtSize(a.size)}</div></div>
+      <button class="btn btn-line btn-sm" data-act="open-file" data-id="${a.id}">Open</button>
+      <button class="rm" title="Remove" data-act="remove-file" data-sec="${sid}" data-id="${a.id}">×</button>
+    </div>`).join('') || `<div class="empty-line">No documents attached yet.</div>`;
+  return `<div class="addbox">
+    <div class="g-lbl"><span class="d"></span>${esc(heading)}${list.length ? `<span class="ct">${list.length}</span>` : ''}</div>
+    <div class="file-list">${rows}</div>
+    <label class="btn btn-line btn-sm file-btn">+ Attach document<input type="file" data-attach="${sid}" multiple hidden></label>
+    <div class="file-hint">Attach a key-learnings doc (PDF, Word, etc.). Stored in this browser — keep files reasonably small.</div>
+  </div>`;
+}
+
+function sectionExtras(ev, s) {
+  let html = '';
+  if (s.id === 's04') html += budgetBlock(ev);
+  if (CUSTOM_SECTIONS[s.id]) html += customItemsBlock(ev, s);
+  if (s.id === 's04') html += budgetSumBlock(ev);
+  if (s.id === VENDOR_SECTION) html += vendorBlock(ev);
+  if (ATTACH_SECTIONS[s.id]) html += attachBlock(ev, s.id, ATTACH_SECTIONS[s.id]);
+  return html;
+}
+
+function sectionPanel(ev, s) {
+  const sp = sectionProgress(ev, s);
+  const open = ev.open && ev.open[s.id];
+  const answerLabels = ANSWERABLE[s.id] || [];
+
+  const normal = [], answer = [];
+  s.groups.forEach((g, gi) => (answerLabels.includes(g.label) ? answer : normal).push({ g, gi }));
+
+  const groupsHtml = normal.map(({ g, gi }) => groupBlock(ev, s, g, gi)).join('');
+  const answerHtml = answer.map(({ g, gi }) => answerBlock(ev, s, g, gi)).join('');
+  const extras = sectionExtras(ev, s);
+  const noteVal = (ev.notes && ev.notes[s.id]) || '';
+
+  return `<div class="panel${open ? ' open' : ''}" id="${s.id}">
+    <button class="sec-head" data-act="toggle-section" data-id="${s.id}">
+      <span class="num">${s.num}</span>
+      <span><span class="title">${esc(s.title)}</span><span class="lede">${esc(s.lede)}</span></span>
+      <span class="prog"><span class="n">${sp.done}/${sp.total}</span><span class="mk">${open ? '–' : '+'}</span></span>
+    </button>
+    <div class="sec-body">
+      ${groupsHtml ? `<div class="groups">${groupsHtml}</div>` : ''}
+      ${answerHtml}
+      ${extras}
+      ${s.note ? `<div class="note-hint">${esc(s.note)}</div>` : ''}
+      <div class="note-wrap">
+        <label>Notes for this section</label>
+        <textarea class="note" data-sec="${s.id}" placeholder="Add notes, decisions, owners, links…">${esc(noteVal)}</textarea>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* --- Modal --- */
+function openModal() {
+  if (state.modal) return;
+  state.modal = true;
+  const div = document.createElement('div');
+  div.className = 'modal-bg';
+  div.id = 'modalBg';
+  div.innerHTML = `
+    <div class="modal">
+      <h2>New event</h2>
+      <p class="sub">Spin up a fresh playbook for a client.</p>
+      <form data-act="create-event">
+        <div class="field"><label>Client</label><input name="mClient" placeholder="Acme Corp" required></div>
+        <div class="field"><label>Event name</label><input name="mName" placeholder="Annual Executive Summit" required></div>
+        <div class="field"><label>Date</label><input name="mDate" type="date"></div>
+        <div class="field"><label>Venue <span class="opt">(optional)</span></label><input name="mVenue" placeholder="The Grand Ballroom"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-line" data-act="close-modal">Cancel</button>
+          <button type="submit" class="btn btn-gold">Create event</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(div);
+  const first = div.querySelector('input[name="mClient"]');
+  if (first) first.focus();
+}
+function closeModal() { state.modal = false; const m = document.getElementById('modalBg'); if (m) m.remove(); }
+
+/* ---------- Actions ---------- */
+function createEvent(form) {
+  const g = n => (form.elements[n] ? form.elements[n].value.trim() : '');
+  const name = g('mName'), client = g('mClient');
+  if (!name || !client) return;
+  const ev = { id: uid(), client, name, date: g('mDate'), venue: g('mVenue'), createdAt: Date.now(), checks: {}, notes: {}, open: {}, collaborators: [] };
+  state.events.unshift(ev);
+  save();
+  closeModal();
+  state.view = 'home';           // land on the list so the new card is visible + clickable
+  state.currentId = null;
+  window.scrollTo(0, 0);
+  render();
+}
+function openEvent(id) { state.currentId = id; state.view = 'event'; window.scrollTo(0, 0); render(); }
+function goHome() { state.view = 'home'; state.currentId = null; window.scrollTo(0, 0); render(); }
+function goGuide() { state.view = 'guide'; state.currentId = null; window.scrollTo(0, 0); render(); }
+
+function toggleItem(key) {
+  const ev = currentEvent(); if (!ev) return;
+  if (ev.checks[key]) delete ev.checks[key]; else ev.checks[key] = true;
+  save();
+  renderEvent();
+}
+function toggleSection(id) {
+  const ev = currentEvent(); if (!ev) return;
+  ev.open = ev.open || {};
+  ev.open[id] = !ev.open[id];
+  save();
+  const panel = document.getElementById(id);
+  if (panel) panel.classList.toggle('open', ev.open[id]);
+  const mk = panel && panel.querySelector('.prog .mk');
+  if (mk) mk.textContent = ev.open[id] ? '–' : '+';
+}
+function saveNote(id, val) {
+  const ev = currentEvent(); if (!ev) return;
+  ev.notes = ev.notes || {};
+  ev.notes[id] = val;
+  save(); // no re-render: keep textarea focus
+}
+function addCollab(form) {
+  const ev = currentEvent(); if (!ev) return;
+  const name = (form.elements['cName'].value || '').trim();
+  if (!name) return;
+  ev.collaborators = ev.collaborators || [];
+  ev.collaborators.push({ id: uid(), name, email: (form.elements['cEmail'].value || '').trim(), role: form.elements['cRole'].value });
+  save();
+  renderEvent();
+  const c = document.getElementById('collab'); if (c) c.scrollIntoView({ block: 'center' });
+}
+function removeCollab(id) {
+  const ev = currentEvent(); if (!ev) return;
+  ev.collaborators = (ev.collaborators || []).filter(c => c.id !== id);
+  save();
+  renderEvent();
+}
+function saveAnswer(key, val) {
+  const ev = currentEvent(); if (!ev) return;
+  ev.answers = ev.answers || {};
+  ev.answers[key] = val;
+  save(); // no re-render: keep textarea focus
+}
+function addCustomItem(sid, text) {
+  const ev = currentEvent(); if (!ev || !text) return;
+  ev.customItems = ev.customItems || {};
+  (ev.customItems[sid] = ev.customItems[sid] || []).push({ id: uid(), text });
+  save();
+  renderEvent();
+}
+function removeCustomItem(sid, id) {
+  const ev = currentEvent(); if (!ev) return;
+  if (ev.customItems && ev.customItems[sid]) ev.customItems[sid] = ev.customItems[sid].filter(x => x.id !== id);
+  if (ev.checks) delete ev.checks[sid + '|c|' + id];
+  save();
+  renderEvent();
+}
+function addVendor(name) {
+  const ev = currentEvent(); if (!ev || !name) return;
+  ev.vendors = ev.vendors || [];
+  ev.vendors.push({ id: uid(), name, signed: false });
+  save();
+  renderEvent();
+}
+function removeVendor(id) {
+  const ev = currentEvent(); if (!ev) return;
+  ev.vendors = (ev.vendors || []).filter(v => v.id !== id);
+  save();
+  renderEvent();
+}
+function toggleVendorSigned(id) {
+  const ev = currentEvent(); if (!ev) return;
+  const v = (ev.vendors || []).find(v => v.id === id);
+  if (v) { v.signed = !v.signed; save(); renderEvent(); }
+}
+function setBudget(field, val) {
+  const ev = currentEvent(); if (!ev) return;
+  ev.budget = ev.budget || { total: '', final: false };
+  ev.budget[field] = val;
+  save(); // no re-render for the text field: keep focus
+}
+function toggleBudgetFinal() {
+  const ev = currentEvent(); if (!ev) return;
+  ev.budget = ev.budget || { total: '', final: false };
+  ev.budget.final = !ev.budget.final;
+  save();
+  renderEvent(); // refresh the In process / Final label
+}
+function setAmount(key, val) {
+  const ev = currentEvent(); if (!ev) return;
+  ev.amounts = ev.amounts || {};
+  ev.amounts[key] = val;
+  save();
+  const el = document.getElementById('budget-sum'); // update sum live, keep input focus
+  if (el) el.textContent = fmtMoney(budgetSum(ev));
+}
+
+const FILE_PREFIX = 'hospitality-file-';
+function findAttachment(id) {
+  const ev = currentEvent(); if (!ev || !ev.attachments) return null;
+  for (const sid in ev.attachments) {
+    const hit = ev.attachments[sid].find(a => a.id === id);
+    if (hit) return hit;
+  }
+  return null;
+}
+function addFiles(sid, files) {
+  const ev = currentEvent(); if (!ev) return;
+  ev.attachments = ev.attachments || {};
+  const arr = ev.attachments[sid] = ev.attachments[sid] || [];
+  let pending = files.length;
+  const done = () => { save(); renderEvent(); };
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const id = uid();
+      try { localStorage.setItem(FILE_PREFIX + id, reader.result); }
+      catch (err) { alert('“' + file.name + '” is too large to store in this local prototype. Try a smaller file.'); if (--pending === 0) done(); return; }
+      arr.push({ id, name: file.name, size: file.size, type: file.type });
+      if (--pending === 0) done();
+    };
+    reader.onerror = () => { if (--pending === 0) done(); };
+    reader.readAsDataURL(file);
+  });
+}
+function openFile(id) {
+  const meta = findAttachment(id);
+  let data = null;
+  try { data = localStorage.getItem(FILE_PREFIX + id); } catch (e) {}
+  if (!data) { alert('That file is no longer available in this browser.'); return; }
+  const a = document.createElement('a');
+  a.href = data;
+  a.download = (meta && meta.name) || 'document';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function removeFile(sid, id) {
+  const ev = currentEvent(); if (!ev) return;
+  if (ev.attachments && ev.attachments[sid]) ev.attachments[sid] = ev.attachments[sid].filter(a => a.id !== id);
+  try { localStorage.removeItem(FILE_PREFIX + id); } catch (e) {}
+  save();
+  renderEvent();
+}
+
+/* ---------- One delegated listener set (robust: no inline handlers) ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  const act = t.dataset.act;
+  if (act === 'new-event') { openModal(); }
+  else if (act === 'close-modal') { closeModal(); }
+  else if (act === 'open-event') { openEvent(t.dataset.id); }
+  else if (act === 'go-home') { closeModal(); goHome(); }
+  else if (act === 'go-guide') { closeModal(); goGuide(); }
+  else if (act === 'toggle-section') { toggleSection(t.dataset.id); }
+  else if (act === 'remove-collab') { removeCollab(t.dataset.id); }
+  else if (act === 'remove-item') { removeCustomItem(t.dataset.sec, t.dataset.id); }
+  else if (act === 'remove-vendor') { removeVendor(t.dataset.id); }
+  else if (act === 'open-file') { openFile(t.dataset.id); }
+  else if (act === 'remove-file') { removeFile(t.dataset.sec, t.dataset.id); }
+});
+document.addEventListener('submit', e => {
+  const form = e.target.closest('form[data-act]');
+  if (!form) return;
+  e.preventDefault();
+  if (form.dataset.act === 'create-event') createEvent(form);
+  else if (form.dataset.act === 'add-collab') addCollab(form);
+  else if (form.dataset.act === 'add-item') { addCustomItem(form.dataset.sec, (form.elements['itemText'].value || '').trim()); }
+  else if (form.dataset.act === 'add-vendor') { addVendor((form.elements['vendorName'].value || '').trim()); }
+});
+document.addEventListener('change', e => {
+  const fi = e.target.closest('input[type="file"][data-attach]');
+  if (fi) { if (fi.files && fi.files.length) addFiles(fi.dataset.attach, fi.files); return; }
+  const bf = e.target.closest('input[type="checkbox"][data-budget="final"]');
+  if (bf) { toggleBudgetFinal(); return; }
+  const v = e.target.closest('input[type="checkbox"][data-vendor]');
+  if (v) { toggleVendorSigned(v.dataset.vendor); return; }
+  const cb = e.target.closest('input[type="checkbox"][data-key]');
+  if (cb) toggleItem(cb.dataset.key);
+});
+document.addEventListener('input', e => {
+  const amt = e.target.closest('input[data-amount]');
+  if (amt) { setAmount(amt.dataset.amount, amt.value); return; }
+  const bt = e.target.closest('input[data-budget="total"]');
+  if (bt) { setBudget('total', bt.value); return; }
+  const ans = e.target.closest('textarea[data-answer]');
+  if (ans) { saveAnswer(ans.dataset.answer, ans.value); return; }
+  const note = e.target.closest('textarea.note[data-sec]');
+  if (note) { saveNote(note.dataset.sec, note.value); return; }
+  const search = e.target.closest('input[data-act="search"]');
+  if (search) {
+    state.guideQuery = search.value;
+    const box = document.getElementById('guideResults');
+    if (box) box.innerHTML = guideResults(state.guideQuery); // update results only; keep input focus
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.modal) closeModal(); });
+document.addEventListener('click', e => { if (e.target.id === 'modalBg') closeModal(); });
+
+load();
+render();
+</script>
+</body>
+</html>
