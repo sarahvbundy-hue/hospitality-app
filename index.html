@@ -447,7 +447,9 @@ const TOTAL_ITEMS = PLAYBOOK.reduce((n, s) => n + itemCount(s), 0);
 /* ---------- Supabase client + state ---------- */
 const SUPABASE_URL = 'https://ckdevuabpxjrikkcujik.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jZIIYG7N4eIlQfrX8-fXaw_IbObMaER';
-const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+}) : null;
 const LEGACY_STORE = 'hospitality-events-v1'; // pre-sign-in local data (for one-time import)
 const CLIENT_ID = Math.random().toString(36).slice(2);
 
