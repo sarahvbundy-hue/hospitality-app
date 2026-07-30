@@ -1100,6 +1100,7 @@ document.addEventListener('click', e => {
   else if (act === 'remove-file') { removeFile(t.dataset.sec, t.dataset.id); }
   else if (act === 'sign-out') { signOut(); }
   else if (act === 'auth-back') { authBack(); }
+  else if (act === 'auth-resend') { sendLink(state.authEmail); }
   else if (act === 'migrate') { migrateLocal(); }
 });
 document.addEventListener('submit', e => {
@@ -1108,8 +1109,7 @@ document.addEventListener('submit', e => {
   e.preventDefault();
   if (form.dataset.act === 'create-event') createEvent(form);
   else if (form.dataset.act === 'add-collab') addCollab(form);
-  else if (form.dataset.act === 'auth-email') sendCode(form.elements['email'].value);
-  else if (form.dataset.act === 'auth-code') verifyCode(form.elements['code'].value);
+  else if (form.dataset.act === 'auth-email') sendLink(form.elements['email'].value);
   else if (form.dataset.act === 'add-item') { addCustomItem(form.dataset.sec, (form.elements['itemText'].value || '').trim()); }
   else if (form.dataset.act === 'add-vendor') { addVendor((form.elements['vendorName'].value || '').trim()); }
 });
@@ -1164,36 +1164,27 @@ function renderAuth() {
       ${stage === 'email' ? `
         <form class="auth-form" data-act="auth-email">
           <input name="email" type="email" placeholder="you@company.com" value="${esc(state.authEmail)}" autocomplete="email" required>
-          <button class="btn btn-gold" type="submit">Send me a code</button>
+          <button class="btn btn-gold" type="submit">Email me a sign-in link</button>
         </form>` : `
-        <form class="auth-form" data-act="auth-code">
-          <p class="auth-note">Enter the 6-digit code we emailed to <b>${esc(state.authEmail)}</b>.</p>
-          <input name="code" inputmode="numeric" placeholder="123456" autocomplete="one-time-code" required>
+        <div class="auth-form">
+          <p class="auth-note">We emailed a sign-in link to <b>${esc(state.authEmail)}</b>. Open that email <b>on this device</b> and tap the link to finish signing in.</p>
           <div class="auth-actions">
-            <button class="btn btn-gold" type="submit">Verify &amp; sign in</button>
+            <button class="btn btn-gold" type="button" data-act="auth-resend">Resend link</button>
             <button class="btn btn-line" type="button" data-act="auth-back">Use a different email</button>
           </div>
-        </form>`}
+        </div>`}
       ${state.authMsg ? `<div class="auth-msg">${esc(state.authMsg)}</div>` : ''}
     </div>`;
   const f = app.querySelector('input'); if (f) f.focus();
 }
-async function sendCode(email) {
+async function sendLink(email) {
   email = (email || '').trim();
   if (!email || !sb) return;
-  state.authEmail = email; state.authMsg = 'Sending code…'; renderAuth();
+  state.authEmail = email; state.authMsg = 'Sending link…'; renderAuth();
   const redirectTo = location.origin + location.pathname; // pin the link back to this exact app URL
   const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: redirectTo } });
   if (error) { state.authMsg = error.message; renderAuth(); return; }
-  state.authStage = 'code'; state.authMsg = ''; renderAuth();
-}
-async function verifyCode(code) {
-  code = (code || '').trim();
-  if (!code || !sb) return;
-  state.authMsg = 'Verifying…'; renderAuth();
-  const { error } = await sb.auth.verifyOtp({ email: state.authEmail, token: code, type: 'email' });
-  if (error) { state.authMsg = error.message; renderAuth(); }
-  // success flows through onAuthStateChange
+  state.authStage = 'sent'; state.authMsg = ''; renderAuth();
 }
 function authBack() { state.authStage = 'email'; state.authMsg = ''; renderAuth(); }
 async function signOut() { if (sb) await sb.auth.signOut(); }
