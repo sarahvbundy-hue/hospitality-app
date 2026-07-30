@@ -1182,7 +1182,8 @@ async function sendCode(email) {
   email = (email || '').trim();
   if (!email || !sb) return;
   state.authEmail = email; state.authMsg = 'Sending code…'; renderAuth();
-  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  const redirectTo = location.origin + location.pathname; // pin the link back to this exact app URL
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: redirectTo } });
   if (error) { state.authMsg = error.message; renderAuth(); return; }
   state.authStage = 'code'; state.authMsg = ''; renderAuth();
 }
