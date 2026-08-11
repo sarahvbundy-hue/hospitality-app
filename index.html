@@ -1159,6 +1159,9 @@ async function addCollab(form) {
   (state.members[ev.id] = existing).push({ email, role });
   renderEvent();
   const c = document.getElementById('collab'); if (c) c.scrollIntoView({ block: 'center' });
+  // best-effort: email the invitee a link (no-op if the send-invite function isn't deployed yet)
+  sb.functions.invoke('send-invite', { body: { to: email, eventName: ev.name, inviter: state.user.email, appUrl: location.origin + location.pathname } })
+    .catch(e => console.warn('invite email failed (send-invite function may not be deployed):', e));
 }
 async function removeCollab(email) {
   const ev = currentEvent(); if (!ev || !sb) return;
